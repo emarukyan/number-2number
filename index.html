@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number to Number Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .level-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .hearts {
+            display: flex;
+            gap: 10px;
+            font-size: 32px;
+        }
+
+        .board-wrapper {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .corner-space {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .column-sums {
+            grid-column: 2;
+            grid-row: 1;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+        }
+
+        .column-sum {
+            background: #e8e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .row-sums {
+            grid-column: 1;
+            grid-row: 2;
+            display: grid;
+            grid-template-rows: repeat(8, 1fr);
+            gap: 5px;
+        }
+
+        .row-sum {
+            background: #e8e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .board {
+            grid-column: 2;
+            grid-row: 2;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 5px;
+            position: relative;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+        }
+
+        .cell.ignored {
+            opacity: 0.3;
+        }
+
+        .cell.circled {
+            border: 4px solid #333;
+            box-shadow: inset 0 0 0 2px white;
+        }
+
+        .color-sums {
+            display: none;
+        }
+
+        .color-sum-badge {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 4px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-check {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-reset {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-hint {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-hint:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        .message.success {
+            color: #4CAF50;
+        }
+
+        .message.error {
+            color: #f44336;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+
+            .cell {
+                font-size: 18px;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="level-title">Level <span id="level-number">1</span></div>
+            <div class="hearts" id="hearts">❤️❤️❤️</div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="corner-space"></div>
+            <div class="column-sums" id="column-sums"></div>
+            <div class="row-sums" id="row-sums"></div>
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="color-sums" id="color-sums"></div>
+
+        <div class="controls">
+            <button class="btn btn-hint" id="btn-hint" title="Get a hint">💡 Hint</button>
+            <button class="btn btn-check" id="btn-check">✓ Check</button>
+            <button class="btn btn-reset" id="btn-reset">↻ Reset</button>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script src="game.js"></script>
+
+</body>
+</html>
+
