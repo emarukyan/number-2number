@@ -137,6 +137,7 @@ function handleCellClick(row, col) {
   updateCellState(cell, row, col)
 
   clearMessage()
+  clearErrorHighlights()
 }
 
 // Update cell appearance based on state
@@ -210,11 +211,15 @@ function checkSolution() {
 
   let isCorrect = true
   let errors = []
+  let wrongRows = []
+  let wrongCols = []
+  let wrongColors = []
 
   // Check row sums
   for (let i = 0; i < 8; i++) {
     if (rowSums[i] !== currentLevel.rowsSum[i]) {
       isCorrect = false
+      wrongRows.push(i)
       errors.push(
         `Row ${i + 1}: Expected ${currentLevel.rowsSum[i]}, got ${rowSums[i]}`
       )
@@ -225,6 +230,7 @@ function checkSolution() {
   for (let i = 0; i < 8; i++) {
     if (colSums[i] !== currentLevel.columnsSum[i]) {
       isCorrect = false
+      wrongCols.push(i)
       errors.push(
         `Column ${i + 1}: Expected ${currentLevel.columnsSum[i]}, got ${
           colSums[i]
@@ -238,22 +244,88 @@ function checkSolution() {
     const actualSum = colorSums[color] || 0
     if (actualSum !== expectedSum) {
       isCorrect = false
+      wrongColors.push(color)
       errors.push(`Color ${color}: Expected ${expectedSum}, got ${actualSum}`)
     }
   })
 
-  return { isCorrect, errors }
+  return { isCorrect, errors, wrongRows, wrongCols, wrongColors }
+}
+
+// Clear all error highlights
+function clearErrorHighlights() {
+  document
+    .querySelectorAll(".row-sum.error")
+    .forEach((el) => el.classList.remove("error"))
+  document
+    .querySelectorAll(".column-sum.error")
+    .forEach((el) => el.classList.remove("error"))
+  document
+    .querySelectorAll(".color-sum-badge.error")
+    .forEach((el) => el.classList.remove("error"))
+}
+
+// Highlight wrong sums
+function highlightErrors(wrongRows, wrongCols, wrongColors) {
+  // Highlight wrong row sums
+  const rowSumElements = document.querySelectorAll(".row-sum")
+  wrongRows.forEach((i) => {
+    if (rowSumElements[i]) {
+      rowSumElements[i].classList.add("error")
+    }
+  })
+
+  // Highlight wrong column sums
+  const colSumElements = document.querySelectorAll(".column-sum")
+  wrongCols.forEach((i) => {
+    if (colSumElements[i]) {
+      colSumElements[i].classList.add("error")
+    }
+  })
+
+  // Highlight wrong color badges
+  const colorBadges = document.querySelectorAll(".color-sum-badge")
+  colorBadges.forEach((badge) => {
+    const badgeColor = badge.parentElement.style.backgroundColor
+    // Convert badge text to find matching color
+    wrongColors.forEach((wrongColor) => {
+      // Check if this badge's cell color matches the wrong color
+      if (isSameColor(badgeColor, wrongColor)) {
+        badge.classList.add("error")
+      }
+    })
+  })
+}
+
+// Helper to compare colors (handles different formats)
+function isSameColor(color1, color2) {
+  // Create temporary elements to convert colors to same format
+  const temp = document.createElement("div")
+  temp.style.color = color1
+  document.body.appendChild(temp)
+  const computed1 = getComputedStyle(temp).color
+  temp.style.color = color2
+  const computed2 = getComputedStyle(temp).color
+  document.body.removeChild(temp)
+  return computed1 === computed2
 }
 
 // Handle check button click
 document.getElementById("btn-check").addEventListener("click", () => {
-  const { isCorrect, errors } = checkSolution()
+  const { isCorrect, errors, wrongRows, wrongCols, wrongColors } =
+    checkSolution()
+
+  // Clear previous error highlights
+  clearErrorHighlights()
 
   if (isCorrect) {
     showMessage("🎉 Congratulations! You solved it!", "success")
   } else {
     lives--
     updateHearts()
+
+    // Highlight the wrong sums
+    highlightErrors(wrongRows, wrongCols, wrongColors)
 
     if (lives > 0) {
       showMessage(
@@ -281,6 +353,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
       .map(() => Array(8).fill(0))
     renderBoard()
     clearMessage()
+    clearErrorHighlights()
   }
 })
 
